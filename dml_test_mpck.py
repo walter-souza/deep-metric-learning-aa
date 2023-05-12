@@ -18,7 +18,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import confusion_matrix
-from utils.dataset_utils import *
+from utils.dataset import *
 from utils.constants import *
 from utils.mpckmeansmf import *
 import sklearn.neighbors
