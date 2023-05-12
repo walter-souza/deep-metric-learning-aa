@@ -31,7 +31,7 @@ class DatasetIMDB62(torch.utils.data.Dataset):
         return self.texts
 
 def load_dataset_imdb62(data_path):
-    file = open(data_path, 'r')
+    file = open(data_path, 'r', encoding='utf8')
     lines = file.readlines()
     authors = []
     texts = []
