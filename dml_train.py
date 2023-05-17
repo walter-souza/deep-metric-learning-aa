@@ -3,16 +3,13 @@ import torch
 import transformers
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-import pandas as pd
-from sklearn.manifold import TSNE
-import seaborn as sns
-from dml_distilbert_v3 import DistilBertV3
+from dml_distilbert_v3 import DistilBertV1
+
 import utils
 import criteria
-from criteria.partial_fc import *
+import datasets
+
 import math
-
-
 import argparse, parameters
 
 ########## CONFIG ##########
@@ -20,37 +17,21 @@ parser = argparse.ArgumentParser()
 parser = parameters.training_parameters(parser)
 config = parser.parse_args()
 
-########## CONSTANTS ##########
-DATASET_REDUCTION = 0.1
-SEED = 21
-BATCH_SIZE = 64
-EMBEDDING_SIZE = 256   #TODO: Alterar no modelo para ser dinâmico
-TOKEN_MAX_LENGTH = 128 #TODO: Alterar no modelo para ser dinâmico
-EPOCHS = 20
-BASE_MODEL = "distilbert-base-uncased"
-
 ########## MODEL AND TOKENIZER ##########
-tokenizer = transformers.DistilBertTokenizerFast.from_pretrained(BASE_MODEL)
-model = DistilBertV3(EMBEDDING_SIZE, TOKEN_MAX_LENGTH, config=BASE_MODEL)
+tokenizer = transformers.DistilBertTokenizerFast.from_pretrained(config.base_model)
+model = DistilBertV1(config.embedding_size, config.token_size, config=config.base_model)
+config.tokenizer = tokenizer
 
 ########## DATASET AND DATALOADER ##########
-X_global, y_global = utils.dataset.load_dataset_imdb62('datasets/imdb62/imdb62.txt')
-X_train, X_test, y_train, y_test = utils.dataset.train_test_split(X_global, y_global, test_size=0.25, stratify=y_global, random_state=SEED)
-
-dataset_train = utils.dataset.DatasetIMDB62(texts=X_train, labels=y_train, tokenizer=tokenizer, max_length=TOKEN_MAX_LENGTH)
-dataset_test = utils.dataset.DatasetIMDB62(texts=X_test, labels=y_test, tokenizer=tokenizer, max_length=TOKEN_MAX_LENGTH)
-
-dl_train = torch.utils.data.DataLoader(dataset_train, batch_size=BATCH_SIZE)
-dl_test  = torch.utils.data.DataLoader(dataset_test, batch_size=BATCH_SIZE)
-
-n_classes = len(np.unique(y_train))
+dl_train, dl_test, n_classes, dataset_size = datasets.select(config.dataset, config)
 config.n_classes = n_classes
-print('n_classes:', n_classes)
+print('n_classes:', config.n_classes)
 
-########## LOSS AND OPTIMIZER ##########
+########## LOSS ##########
 loss_function = criteria.select(config.loss, config)
 print('loss:', config.loss)
 
+########## OPTIMIZER ##########
 optimizer = torch.optim.AdamW([{'params': model.parameters()}, {'params': loss_function.parameters()}], lr=1e-4, weight_decay=5e-4)
 
 ########## GPU ##########
@@ -59,20 +40,20 @@ print('Device:', device)
 model.to(device)
 loss_function.to(device)
 
-''' =============== Training ==============='''
+########## TRAINING ##########
 model.train()
 loss_function.train()
 batch_list_loss = []
 
 path_file = 'data_visualization/'
 minimun_loss = math.inf
-for epoch in range(EPOCHS):
+for epoch in range(config.n_epochs):
     data_iterator = tqdm(dl_train, desc='Epoch {} Training...'.format(epoch))
     current_batch_loss = []
     
-    ''' =============== Visualization ==============='''
+    ########## VISUALIZATION ##########
     name_file = 'train_epoch_' + str(epoch) + '.png'
-    utils.dataset.view_data(dl_train, model, path_file, name_file, device)
+    utils.data_visualization.view_data(dl_train, model, path_file, name_file, device)
 
     for ii, item in enumerate(data_iterator):
         input_ids = item['input_ids'].to(device)
@@ -95,11 +76,14 @@ for epoch in range(EPOCHS):
         optimizer.step()
 
     if (np.mean(current_batch_loss) < minimun_loss):
-        ''' =============== Save Model ==============='''
+        ########## SAVE MODEL ##########
         print('Previous loss: {} | New loss: {} | Saving model...'.format(minimun_loss, np.mean(current_batch_loss)))
-        save_name_state = 'models/dml_distilbert_state_dict.pth'
-        save_name_model = 'models/dml_distilbert.pth'
-        torch.save(model.state_dict(), save_name_state)
+        save_name_model = 'results/deep_metric_learning/{model.name}/dataset/{model.name}_{config.dataset}_{config.loss}_es{config.embedding_size}_ts{config.token_size}_bs{config.batch_size}_s{config.seed}.pth'
+        name_file = 'train_epoch_' + str(epoch) + '.png'
+        utils.data_visualization.view_data(dl_train, model, path_file, name_file, device)
+        
+        # save_name_model = 'models/dml_distilbert.pth'
+        # torch.save(model.state_dict(), save_name_state)
         torch.save(model, save_name_model)
         
         minimun_loss = np.mean(current_batch_loss)
@@ -112,7 +96,7 @@ for epoch in range(EPOCHS):
     plt.close()
 
     plt.figure(figsize=(30,20))
-    plt.plot(batch_list_loss[::int(len(X_train)/BATCH_SIZE)])
+    plt.plot(batch_list_loss[::int(len(dataset_size)/config.batch_size)])
     plt.savefig(path_file + 'batch_list_loss.png')
     plt.clf()
     plt.cla()

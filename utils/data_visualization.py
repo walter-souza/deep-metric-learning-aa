@@ -6,49 +6,6 @@ from sklearn.manifold import TSNE
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 
-
-''' =============== IMDB62 =============== ''' 
-
-class DatasetIMDB62(torch.utils.data.Dataset):
-    def __init__(self, texts, labels, tokenizer, max_length=256, padding='max_length', truncation=True):
-        self.texts = texts
-        self.labels = [int(label) for label in labels]
-        self.encodings = tokenizer(texts, max_length=max_length, padding=padding, truncation=truncation)
-  
-    def __getitem__(self, i):
-        item = {}
-        item = {key : torch.tensor(val[i]) for key, val in self.encodings.items()}
-        item['labels'] = torch.tensor(self.labels[i])
-        return item
-  
-    def __len__(self):
-        return len(self.labels)
-  
-    def get_labels(self):
-        return self.labels
-
-    def get_texts(self):
-        return self.texts
-
-def load_dataset_imdb62(data_path):
-    file = open(data_path, 'r', encoding='utf8')
-    lines = file.readlines()
-    authors = []
-    texts = []
-    for line in lines:
-        line = line.split('\n')[0]
-        line = line.split('\t')
-        author = line[1]
-        content = line[5]
-        if (author != '') and (content != ''):
-            authors.append(author)
-            texts.append(content)
-        
-    authors = np.unique(authors, return_inverse=True)[1]
-
-    return texts, authors
-
-''' =============== Data Visualization =============== ''' 
 def view_data(dl, model, path_file, name_file, device):
 
   model.eval()

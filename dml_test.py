@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import confusion_matrix
-from utils.dataset import *
+from utils.data_visualization import *
 from utils.constants import *
 import sklearn.neighbors
 import sklearn.metrics as metrics

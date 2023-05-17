@@ -2,11 +2,11 @@ import numpy as np
 import torch
 import transformers
 
-class DistilBertV3(torch.nn.Module):
+class DistilBertV1(torch.nn.Module):
     def __init__(self, embedding_size, token_max_length, config="distilbert-base-uncased", use_all_tokens=False, normalize=False):
-        super(DistilBertV3, self).__init__()
+        super(DistilBertV1, self).__init__()
 
-        self.name = 'DML_DistilBertV3'
+        self.name = 'DML_DistilBertV1'
         self.normalize  = normalize
         self.use_all_tokens = use_all_tokens
         
