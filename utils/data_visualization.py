@@ -27,7 +27,7 @@ def view_data(dl, model, path_file, name_file, device):
         xall = np.concatenate((xall, embeddings.data.cpu().numpy()))
       yall = np.concatenate((yall, labels.data.cpu().numpy()))
 
-  tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
+  tsne = TSNE(n_components=2, verbose=0, perplexity=40, n_iter=300)
   tsne_results = tsne.fit_transform(xall)
   df_tsne = pd.DataFrame(tsne_results)
   df_tsne['label'] = yall
