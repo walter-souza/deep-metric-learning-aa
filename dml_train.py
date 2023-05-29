@@ -103,9 +103,7 @@ for epoch in range(config.n_epochs):
         save_name_model = '{}/model.pth'.format(config.save_path)
         torch.save(model, save_name_model)
 
-        model.eval()
-        utils.dml_classification_report.dml_data_classification_report(model, dl_test, device, 7, epoch, config.save_path, 'train')
-        model.train()
+        utils.dml_classification_report.dml_data_classification_report(model, dl_test, device, 7, epoch, config.save_path, 'test')
         
         
     plt.figure(figsize=(30,20))

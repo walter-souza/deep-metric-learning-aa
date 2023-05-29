@@ -64,6 +64,7 @@ def data_classification_report(dl, model, step, device, neighbors):
 
 
 def dml_data_classification_report(model, data_loader, device, neighbors, epoch, save_path, step):
+    model.eval()
     neighbors = 3
     mtr, report, cm = data_classification_report(data_loader, model, step, device, neighbors=neighbors)
     
@@ -84,3 +85,4 @@ def dml_data_classification_report(model, data_loader, device, neighbors, epoch,
     cm_plot = sns.heatmap(cm, annot=True)
     fig = cm_plot.get_figure()
     fig.savefig('{}/dml_cm_test_epoch{}_n{}.png'.format(cms_path, epoch, neighbors))
+    model.train()
