@@ -163,3 +163,5 @@ cython_debug/
 models/
 datasets/my_datasets/
 data_visualization/
+results/
+tests/

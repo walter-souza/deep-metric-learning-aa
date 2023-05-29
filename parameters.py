@@ -1,5 +1,7 @@
 import argparse
 
+# python dml_train.py --dataset imdb62 --loss arcface --embedding_size 32
+
 def training_parameters(parser):
     parser.add_argument('--dataset',          default='imdb62',                    type=str)
     parser.add_argument('--loss',             default='arcface',                   type=str)

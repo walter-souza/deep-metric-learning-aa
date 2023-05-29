@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.manifold import TSNE
 import seaborn as sns
 from sklearn.model_selection import train_test_split
+import os
 
 def view_data(dl, model, path_file, name_file, device):
 
@@ -41,6 +42,10 @@ def view_data(dl, model, path_file, name_file, device):
     legend="full",
     alpha=0.7
   )
+
+  if not os.path.exists(path_file):
+    os.makedirs(path_file)
+
   plt.savefig(path_file + name_file)
   plt.clf()
   plt.cla()
