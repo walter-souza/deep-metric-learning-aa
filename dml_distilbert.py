@@ -2,9 +2,9 @@ import numpy as np
 import torch
 import transformers
 
-class DistilBertV1(torch.nn.Module):
+class DMLDistilBert(torch.nn.Module):
     def __init__(self, embedding_size, token_max_length, config="distilbert-base-uncased", use_all_tokens=False, normalize=False):
-        super(DistilBertV1, self).__init__()
+        super(DMLDistilBert, self).__init__()
 
         self.name = 'DML_DistilBertV1'
         self.normalize  = normalize
@@ -19,11 +19,9 @@ class DistilBertV1(torch.nn.Module):
         else:
             self.last_linear = torch.nn.Linear(self.configuration.dim, embedding_size)
 
-        self.layer_blocks = self.model.transformer.layer
-
     def forward(self, input_ids, attention_mask):
         out = self.model(input_ids, attention_mask=attention_mask)
-    
+
         if self.use_all_tokens:
             out = out.last_hidden_state.view(out.last_hidden_state.shape[0], -1)
         else:

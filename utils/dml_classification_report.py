@@ -51,7 +51,7 @@ def data_classification_report(dl, model, step, device, neighbors):
     top_k_3 = metrics.top_k_accuracy_score(ytest,ypredp,k=3)
     top_k_4 = metrics.top_k_accuracy_score(ytest,ypredp,k=4)
         
-    mtr = {"acc_"+step: acc, 
+    mtr = {"accuracy_"+step: acc, 
             "precision_"+step: precision, 
             "recall_"+step: recall, 
             "f1_"+step: f1, 
@@ -63,20 +63,24 @@ def data_classification_report(dl, model, step, device, neighbors):
     return mtr, report, cm
 
 
-def dml_data_classification_report(model, data_loader, device, neighbors, epoch, save_path):
+def dml_data_classification_report(model, data_loader, device, neighbors, epoch, save_path, step):
     neighbors = 3
-    mtr, report, cm = data_classification_report(data_loader, model, 'test', device, neighbors=neighbors)
+    mtr, report, cm = data_classification_report(data_loader, model, step, device, neighbors=neighbors)
     
-    results_path = '{}/results'.format(save_path)
-    if not os.path.exists(results_path):
-        os.makedirs(results_path)
-    result_file = open('{}/results_epoch{}.txt'.format(results_path, epoch), 'w+')
-    result_file.write('metric\tvalue\n')
-    for (metric, value) in mtr.items():
-        result_file.write('{}\t{}\n'.format(metric, value))
-        print('{}: {}'.format(metric, value))
+    if epoch == 0:
+        result_file = open('{}/results.csv'.format(save_path), 'w+')
+        result_file.write('epoch,')
+        result_file.write(','.join([str(key) for key in mtr.keys()]) + '\n')  
+    else:
+        result_file = open('{}/results.csv'.format(save_path), 'a+')  
+    result_file.write('{},'.format(epoch))
+    result_file.write(','.join([str(value) for value in mtr.values()]) + '\n')
+
+    cms_path = '{}/confusion_matrix'.format(save_path)
+    if not os.path.exists(cms_path):
+        os.makedirs(cms_path)
 
     plt.figure(figsize=(30,20))
     cm_plot = sns.heatmap(cm, annot=True)
     fig = cm_plot.get_figure()
-    fig.savefig('{}/dml_cm_test_epoch{}_n{}.png'.format(results_path, epoch, neighbors))
+    fig.savefig('{}/dml_cm_test_epoch{}_n{}.png'.format(cms_path, epoch, neighbors))
