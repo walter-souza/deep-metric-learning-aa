@@ -164,4 +164,4 @@ models/
 datasets/my_datasets/
 data_visualization/
 results/
-tests/
+_results/
