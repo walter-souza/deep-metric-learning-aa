@@ -6,7 +6,7 @@ class DMLDistilBert(torch.nn.Module):
     def __init__(self, embedding_size, token_max_length, config="distilbert-base-uncased", use_all_tokens=False, normalize=False):
         super(DMLDistilBert, self).__init__()
 
-        self.name = 'DML_DistilBertV1'
+        self.name = 'DMLDistilBert'
         self.normalize  = normalize
         self.use_all_tokens = use_all_tokens
         

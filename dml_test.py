@@ -17,6 +17,8 @@ from utils.data_visualization import *
 from utils.constants import *
 import sklearn.neighbors
 import sklearn.metrics as metrics
+import datasets
+import utils
 
 import argparse, parameters
 
@@ -65,29 +67,38 @@ def data_classification_report(dl, model, step, device, neighbors):
     return mtr, report, cm
 
 def main():
-    tokenizer = transformers.DistilBertTokenizerFast.from_pretrained(BASE_MODEL)
-    # model = torch.load('/home/walter/TCC/DeepMetricLearningV3/models/dml_distilbert.pth')
-    model = torch.load('/home/walter/TCC/DeepMetricLearningV3/models/dml_imdb_ArcFaceLoss/dml_distilbert.pth')
-    
+    ########## CONFIG ##########
+    parser = argparse.ArgumentParser()
+    parser = parameters.training_parameters(parser)
+    config = parser.parse_args()
 
+    if (config.model_path == ''):
+        load_folder = 'results/deep_metric_learning/{datasetname}/{modelname}_{datasetname}_{loss}_es{es}_ts{ts}_bs{bs}_s{seed}'.format(
+            datasetname=config.dataset,
+            modelname=config.modelname,
+            loss=config.loss,
+            es=config.embedding_size,
+            ts=config.token_size,
+            bs=config.batch_size,
+            seed=config.seed)
+    else:
+        load_folder = config.model_path
+
+    ########## MODEL AND TOKENIZER ##########
+    tokenizer = transformers.DistilBertTokenizerFast.from_pretrained(config.base_model)
+    model_path = load_folder + '/model.pth'
+    model = torch.load(model_path)
+    config.tokenizer = tokenizer
+    
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-    X_test,  y_test  = load_dataset_imdb62('/home/walter/TCC/datasets/imdb62/imdb62_test.txt')
-    dataset_test = DatasetIMDB62(texts=X_test, labels=y_test, tokenizer=tokenizer, max_length=TOKEN_MAX_LENGTH)
-    dl_test  = torch.utils.data.DataLoader(dataset_test, batch_size=BATCH_SIZE)
+    ########## DATASET AND DATALOADER ##########
+    _, dl_test, n_classes = datasets.select(config.dataset, config)
+    config.n_classes = n_classes
+    print('n_classes:', config.n_classes)
 
-    model.eval()
-
-    neighbors = 3
-    mtr, report, cm = data_classification_report(dl_test, model, 'test', device, neighbors=neighbors)
-    
-    for (metric, value) in mtr.items():
-        print('{}: {}'.format(metric, value))
-
-    plt.figure(figsize=(30,20))
-    cm_plot = sns.heatmap(cm, annot=True)
-    fig = cm_plot.get_figure()
-    fig.savefig('dml_cm_test_n{}.png'.format(neighbors))
-
+    ########## CLASSIFICATION REPORT ##########
+    utils.dml_classification_report.dml_data_classification_report(model, dl_test, device, 7, 0, 'dml_test', 'test')
+  
 if __name__ == '__main__':
     main()

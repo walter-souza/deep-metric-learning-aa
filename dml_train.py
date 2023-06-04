@@ -4,7 +4,6 @@ import transformers
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from dml_distilbert import DMLDistilBert
-
 import utils
 import criteria
 import datasets
@@ -47,7 +46,7 @@ loss_function.train()
 batch_list_loss = []
 
 ########## SAVE FOLDER ##########
-config.save_path = save_folder = 'results/deep_metric_learning/{datasetname}/{modelname}_{datasetname}_{loss}_es{es}_ts{ts}_bs{bs}_s{seed}'.format(
+save_folder = '_results/deep_metric_learning/{datasetname}/{modelname}_{datasetname}_{loss}_es{es}_ts{ts}_bs{bs}_s{seed}'.format(
     datasetname=config.dataset,
     modelname=config.modelname,
     loss=config.loss,
@@ -55,16 +54,18 @@ config.save_path = save_folder = 'results/deep_metric_learning/{datasetname}/{mo
     ts=config.token_size,
     bs=config.batch_size,
     seed=config.seed)
-print(config.save_path)
+config.save_path = save_folder
+print('Save path:', config.save_path)
+
 ########## VISUALIZATION ##########
+print('Generating visualization before training...', end='')
 data_visualization_path = '{}/data_visualization/'.format(config.save_path)
 if not os.path.exists(data_visualization_path):
     os.makedirs(data_visualization_path)
 data_visualization_name = 'before_train.png'
+utils.data_visualization.dml_view_data(dl_train, model, data_visualization_path, data_visualization_name, device)
+print('Done!')
 
-utils.data_visualization.view_data(dl_train, model, data_visualization_path, data_visualization_name, device)
-
-path_file = 'data_visualization/'
 minimun_loss = math.inf
 for epoch in range(config.n_epochs):
     data_iterator = tqdm(dl_train, desc='Epoch {} Training...'.format(epoch))
@@ -96,10 +97,8 @@ for epoch in range(config.n_epochs):
         
         data_visualization_path = '{}/data_visualization/'.format(config.save_path)
         data_visualization_name = 'train_epoch_{}.png'.format(epoch)
-        utils.data_visualization.view_data(dl_train, model, data_visualization_path, data_visualization_name, device)
+        utils.data_visualization.dml_view_data(dl_train, model, data_visualization_path, data_visualization_name, device)
         
-        # save_name_model = 'models/dml_distilbert.pth'
-        # torch.save(model.state_dict(), save_name_state)
         save_name_model = '{}/model.pth'.format(config.save_path)
         torch.save(model, save_name_model)
 
