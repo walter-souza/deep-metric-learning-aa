@@ -3,7 +3,6 @@ import torch
 import transformers
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from dml_distilbert import DMLDistilBert
 import utils
 import criteria
 import datasets
@@ -16,16 +15,18 @@ parser = argparse.ArgumentParser()
 parser = parameters.training_parameters(parser)
 config = parser.parse_args()
 
-########## MODEL AND TOKENIZER ##########
+########## TOKENIZER ##########
 tokenizer = transformers.DistilBertTokenizerFast.from_pretrained(config.base_model)
-model = DMLDistilBert(config.embedding_size, config.token_size, config=config.base_model)
 config.tokenizer = tokenizer
-config.modelname = model.name
 
 ########## DATASET AND DATALOADER ##########
 dl_train, dl_test, n_classes = datasets.select(config.dataset, config)
 config.n_classes = n_classes
 print('n_classes:', config.n_classes)
+
+########## MODEL ##########
+model = transformers.AutoModelForSequenceClassification.from_pretrained(config.base_model, num_labels=config.n_classes)
+config.modelname = 'TraditionalDistilBert'
 
 ########## LOSS ##########
 loss_function = criteria.select(config.loss, config)
@@ -46,11 +47,9 @@ loss_function.train()
 batch_list_loss = []
 
 ########## SAVE FOLDER ##########
-save_folder = '_results/deep_metric_learning/{datasetname}/{modelname}_{datasetname}_{loss}_es{es}_ts{ts}_bs{bs}_s{seed}'.format(
+save_folder = '_results/traditional_classification/{datasetname}/{modelname}_{datasetname}_ts{ts}_bs{bs}_s{seed}'.format(
     datasetname=config.dataset,
     modelname=config.modelname,
-    loss=config.loss,
-    es=config.embedding_size,
     ts=config.token_size,
     bs=config.batch_size,
     seed=config.seed)
@@ -58,27 +57,27 @@ config.save_path = save_folder
 print('Save path:', config.save_path)
 
 ########## VISUALIZATION ##########
-print('Generating visualization before training...')
-data_visualization_path = '{}/data_visualization/'.format(config.save_path)
-if not os.path.exists(data_visualization_path):
-    os.makedirs(data_visualization_path)
-data_visualization_name = 'before_train.png'
-utils.data_visualization.dml_view_data(dl_train, model, data_visualization_path, data_visualization_name, device)
-print('Done!')
+# print('Generating visualization before training...')
+# data_visualization_path = '{}/data_visualization/'.format(config.save_path)
+# if not os.path.exists(data_visualization_path):
+#     os.makedirs(data_visualization_path)
+# data_visualization_name = 'before_train.png'
+# utils.data_visualization.traditional_view_data(dl_train, model, data_visualization_path, data_visualization_name, device)
+# print('Done!')
 
 minimun_loss = math.inf
 for epoch in range(config.n_epochs):
     data_iterator = tqdm(dl_train, desc='Epoch {} Training...'.format(epoch))
-    current_batch_loss = []    
+    current_batch_loss = []  
     for ii, item in enumerate(data_iterator):
         input_ids = item['input_ids'].to(device)
         attention_mask = item['attention_mask'].to(device)
         labels = item['labels'].to(device)
         labels = labels.long()
 
-        embeddings = model(input_ids, attention_mask)
+        output = model(input_ids, attention_mask, labels=labels)
 
-        loss = loss_function(embeddings, labels)
+        loss = output.loss
         loss.backward()
 
         optimizer.step()
@@ -96,12 +95,14 @@ for epoch in range(config.n_epochs):
         
         data_visualization_path = '{}/data_visualization/'.format(config.save_path)
         data_visualization_name = 'train_epoch_{}.png'.format(epoch)
-        utils.data_visualization.dml_view_data(dl_train, model, data_visualization_path, data_visualization_name, device)
+        utils.data_visualization.traditional_view_data(dl_train, model, data_visualization_path, data_visualization_name, device)
         
         save_name_model = '{}/model.pth'.format(config.save_path)
         torch.save(model, save_name_model)
 
-        utils.dml_classification_report.dml_data_classification_report(model, dl_test, device, 7, epoch, config.save_path, 'test')
+        model.eval()
+        utils.traditional_classification_report.traditional_data_classification_report(model, dl_test, device, epoch, config.save_path, 'test')
+        model.train()
         
         
     plt.figure(figsize=(30,20))

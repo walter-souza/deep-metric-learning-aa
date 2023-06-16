@@ -69,7 +69,7 @@ def traditional_view_data(dl, model, path_file, name_file, device):
                 xall = np.concatenate((xall, embeddings.logits.data.cpu().numpy()))
             yall = np.concatenate((yall, labels.data.cpu().numpy()))
 
-    tsne = TSNE(n_components=2, verbose=0, perplexity=40, n_iter=300)
+    tsne = TSNE(n_components=2, verbose=0, perplexity=40, n_iter=300, init='pca', learning_rate='auto')
     tsne_results = tsne.fit_transform(xall)
     df_tsne = pd.DataFrame(tsne_results)
     df_tsne['label'] = yall

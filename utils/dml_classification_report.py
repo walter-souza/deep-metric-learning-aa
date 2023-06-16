@@ -6,19 +6,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import confusion_matrix
 import sklearn.metrics as metrics
 from utils import dataset_utils
+from utils import metrics_utils
 import os
-
-def get_metrics(true, predict, step):
-    acc = metrics.accuracy_score(true, predict)
-    precision = metrics.precision_score(true, predict, average='macro')
-    recall = metrics.recall_score(true, predict, average='macro')
-    f1 = metrics.f1_score(true, predict, average='macro')
-    
-    mtr = {"accuracy_"+step: acc, 
-            "precision_"+step: precision, 
-            "recall_"+step: recall, 
-            "f1_"+step: f1}
-    return mtr
 
 def data_classification_report(dl, model, step, device, neighbors):
     xall, yall = dataset_utils.get_dml_model_outputs(dl, model, device)
@@ -30,7 +19,7 @@ def data_classification_report(dl, model, step, device, neighbors):
 
     ypred = knn.predict(xtest)
     
-    mtr = get_metrics(ytest, ypred, step)
+    mtr = metrics_utils.get_metrics(ytest, ypred, step)
     report = metrics.classification_report(ytest, ypred, output_dict=True, zero_division=0)
     cm = confusion_matrix(ytest, ypred)
     return mtr, report, cm
